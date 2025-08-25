@@ -177,6 +177,16 @@ void board_set_assets_dir(const std::wstring& dir){
             }
         }
     }
+    // warn user if the basic pawn sprite still cannot be found after
+    // probing alternative locations.  The GUI is unusable without the
+    // piece images, so emit a message box once to alert the user.
+    std::wstring finalProbe = g_assets_dir + L"\\w_p.png";
+    if (GetFileAttributesW(finalProbe.c_str()) == INVALID_FILE_ATTRIBUTES && !g_warned_img) {
+        MessageBoxW(nullptr,
+                    L"No se encuentran los sprites en 'assets'. Asegúrate de que existan w_p.png … b_k.png.",
+                    L"Sprites no encontrados", MB_OK | MB_ICONWARNING);
+        g_warned_img = true;
+    }
     if (g_board_hwnd) InvalidateRect(g_board_hwnd, nullptr, FALSE);
 }
 
