@@ -4,6 +4,7 @@
 - **Layout horizontal**: PGN a la izquierda; derecha = tablero + tabla de jugadas.
 - **UCI Options (Arena/Scid-like)**: diálogo dinámico a partir de `option name ...` del motor.
 - **.exp**: lectura tipo texto (CSV-like) y cruce básico por clave UCI.
+- **Detección de sprites**: la aplicación avisa si faltan imágenes de piezas en `assets/`.
 
 ## Build
 ```bash
