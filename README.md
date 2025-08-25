@@ -8,7 +8,10 @@
 
 ## Build
 ```bash
+# con clang++
 make -j8 CXX=clang++
+# o con g++ de MinGW-w64
+make -j8 CXX=x86_64-w64-mingw32-g++
 # binario: build/ExperienceViewer.exe
 ```
-Requiere MinGW-w64/Clang y GDI+ (ya enlazado con `-lgdiplus`).
+Requiere MinGW-w64 y GDI+ (ya enlazado con `-lgdiplus`).

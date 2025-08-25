@@ -247,7 +247,10 @@ static void on_open_exp(){
     if (path.empty()) return;
     if (!g_app.exp_db.load(path)) { show_message(L"Failed to load EXP file.", L"Error", MB_OK|MB_ICONERROR); return; }
     g_app.current_exp_path = path;
-    set_status(L"EXP loaded.");
+    auto st = g_app.exp_db.compute_stats();
+    std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
+    ws << L"EXP loaded: " << st.entries << L" entries, avg score " << st.avg_score;
+    set_status(ws.str());
 }
 
 static void on_load_engine(){
