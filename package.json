@@ -1,0 +1,17 @@
+{
+  "name": "experience-viewer-",
+  "version": "1.0.0",
+  "description": "- **Tablero** con sprites PNG (GDI+), clic para mover, navegación ←/→ (solo Windows). - **Layout horizontal**: PGN a la izquierda; derecha = tablero + tabla de jugadas. - **UCI Options (Arena/Scid-like)**: diálogo dinámico a partir de `option name ...` del motor. - **.exp**: lectura tipo texto (CSV-like) y cruce básico por clave UCI. - **Detección de sprites**: la aplicación avisa si faltan imágenes de piezas en `assets/`.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "chess.js": "*",
+    "cm-chessboard": "*"
+  }
+}
