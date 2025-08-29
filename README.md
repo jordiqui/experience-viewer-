@@ -7,11 +7,13 @@
 - **Detección de sprites**: la aplicación avisa si faltan imágenes de piezas en `assets/`.
 
 ## Build
+Este proyecto se orienta a la plataforma Windows y debe compilarse con un
+toolchain MinGW-w64.  En sistemas Unix, asegúrate de tener instalado el
+compilador cruzado y especificarlo a `make` mediante `CXX`:
+
 ```bash
-# con clang++
-make -j8 CXX=clang++
-# o con g++ de MinGW-w64
 make -j8 CXX=x86_64-w64-mingw32-g++
 # binario: build/ExperienceViewer.exe
 ```
-Requiere MinGW-w64 y GDI+ (ya enlazado con `-lgdiplus`).
+Los flags específicos de Win32 se aplican automáticamente cuando se detecta un
+compilador MinGW.
