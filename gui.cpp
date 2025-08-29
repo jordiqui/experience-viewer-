@@ -195,13 +195,16 @@ static void fill_moves_for_game(int gameIndex){
             // Show exp cp as +0.42 format
             double v = row.exp_cp/100.0;
             std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
-            if (v>=0) ws<<L'+'; ws<<v;
+            if (v >= 0) {
+                ws << L'+';
+            }
+            ws << v;
             auto s = ws.str();
             ListView_SetItemText(g_hMoves, rowidx, 2, const_cast<LPWSTR>(s.data()));
         }
-        ListView_SetItemText(g_hMoves, rowidx, 3, L"");
-        ListView_SetItemText(g_hMoves, rowidx, 4, L"");
-        ListView_SetItemText(g_hMoves, rowidx, 5, L"");
+        ListView_SetItemText(g_hMoves, rowidx, 3, const_cast<LPWSTR>(L""));
+        ListView_SetItemText(g_hMoves, rowidx, 4, const_cast<LPWSTR>(L""));
+        ListView_SetItemText(g_hMoves, rowidx, 5, const_cast<LPWSTR>(L""));
 
         g_app.current_moves.push_back(row);
         ++ply;
@@ -389,8 +392,11 @@ static std::string build_position_cmd(int upto_ply){
 
 static std::wstring cp_to_human_w(int cp){
     std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
-    double v = cp/100.0;
-    if (v>=0) ws<<L'+'; ws<<v;
+    double v = cp / 100.0;
+    if (v >= 0) {
+        ws << L'+';
+    }
+    ws << v;
     return ws.str();
 }
 
