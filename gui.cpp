@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <map>
 #include <cctype>
+#include <utility>
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -40,6 +41,49 @@ static HWND g_hList = nullptr;   // PGN list
 static HWND g_hMoves = nullptr;  // Moves list (right bottom)
 static HWND g_hBoard = nullptr;  // Board (right top)
 static HWND g_hStatus = nullptr;
+static std::wstring g_assets_override;
+
+static std::vector<std::wstring> missing_asset_files(const std::wstring& dir) {
+    std::vector<std::wstring> missing;
+    DWORD attr = GetFileAttributesW(dir.c_str());
+    if (attr == INVALID_FILE_ATTRIBUTES || !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
+        missing.push_back(L"(directorio no encontrado)");
+        return missing;
+    }
+    const wchar_t* files[] = {
+        L"w_p.png", L"w_n.png", L"w_b.png", L"w_r.png", L"w_q.png", L"w_k.png",
+        L"b_p.png", L"b_n.png", L"b_b.png", L"b_r.png", L"b_q.png", L"b_k.png" };
+    for (const auto* f : files) {
+        std::wstring full = dir + L"\\" + f;
+        if (GetFileAttributesW(full.c_str()) == INVALID_FILE_ATTRIBUTES) {
+            missing.push_back(f);
+        }
+    }
+    return missing;
+}
+
+static std::pair<std::wstring, std::vector<std::wstring>> locate_assets_dir() {
+    std::vector<std::wstring> candidates;
+    if (!g_assets_override.empty()) candidates.push_back(g_assets_override);
+    wchar_t envBuf[MAX_PATH];
+    DWORD envLen = GetEnvironmentVariableW(L"EV_ASSETS_DIR", envBuf, MAX_PATH);
+    if (envLen > 0) candidates.push_back(envBuf);
+
+    wchar_t mod[MAX_PATH]; GetModuleFileNameW(nullptr, mod, MAX_PATH);
+    std::wstring dir(mod); auto pos = dir.find_last_of(L"\\/");
+    if (pos!=std::wstring::npos) dir.erase(pos);
+    candidates.push_back(dir + L"\\assets");
+    candidates.push_back(dir + L"\\..\\assets");
+
+    bool firstSet = false;
+    std::pair<std::wstring, std::vector<std::wstring>> first;
+    for (const auto& c : candidates) {
+        auto missing = missing_asset_files(c);
+        if (missing.empty()) return {c, {}};
+        if (!firstSet) { first = {c, missing}; firstSet = true; }
+    }
+    return first;
+}
 
 static void set_status(const std::wstring& s) { SendMessageW(g_hStatus, SB_SETTEXT, 0, (LPARAM)s.c_str()); }
 
@@ -473,21 +517,23 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
             g_hStatus= CreateWindowW(STATUSCLASSNAMEW, L"", WS_CHILD|WS_VISIBLE, 0,0,0,0, hWnd, (HMENU)ID_STATUS, GetModuleHandleW(nullptr), nullptr);
             init_list_columns();
             init_moves_columns();
-            // assets dir
-            wchar_t mod[MAX_PATH]; GetModuleFileNameW(nullptr, mod, MAX_PATH);
-            std::wstring dir(mod); auto pos = dir.find_last_of(L"\\/"); if (pos!=std::wstring::npos) dir.erase(pos);
-            std::wstring assets = dir + L"\\assets";
-            std::wstring probe = assets + L"\\w_p.png";
-            if (GetFileAttributesW(probe.c_str()) == INVALID_FILE_ATTRIBUTES) {
-                std::wstring alt = dir + L"\\..\\assets";
-                std::wstring altProbe = alt + L"\\w_p.png";
-                if (GetFileAttributesW(altProbe.c_str()) != INVALID_FILE_ATTRIBUTES) {
-                    assets = alt;
-                } else {
-                    show_message(L"No se encuentran los sprites en 'assets'. Asegúrate de que existan w_p.png ... b_k.png.", L"Sprites no encontrados", MB_OK|MB_ICONWARNING);
-                }
-            }
+            auto loc = locate_assets_dir();
+            std::wstring assets = loc.first;
             board_set_assets_dir(assets);
+            if (!loc.second.empty()) {
+                std::wstring msg;
+                if (loc.second.size()==1 && loc.second[0]==L"(directorio no encontrado)") {
+                    msg = L"No se encontró el directorio de sprites en '" + assets + L"'.";
+                } else {
+                    msg = L"Faltan sprites en '" + assets + L"': ";
+                    for (size_t i=0; i<loc.second.size(); ++i) {
+                        if (i) msg += L", ";
+                        msg += loc.second[i];
+                    }
+                }
+                msg += L"\nEstablece la variable de entorno EV_ASSETS_DIR o proporciona una ruta válida.";
+                show_message(msg, L"Sprites no encontrados", MB_OK|MB_ICONWARNING);
+            }
             // initial board
             g_app.board.set_startpos();
             board_set_position(g_app.board.st);
@@ -539,7 +585,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
-int run_gui(HINSTANCE hInstance) {
+int run_gui(HINSTANCE hInstance, const wchar_t* assets_dir) {
+    if (assets_dir) g_assets_override = assets_dir;
     WNDCLASSEXW wc{};
     wc.cbSize = sizeof(wc);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
