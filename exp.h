@@ -6,7 +6,8 @@
 struct ExpEntry {
     std::string key;  // typically UCI like e2e4
     int count = 0;
-    double score = 0.0; // cp/100.0
+    double score = 0.0; // cp
+    int quality = 0;
     int wins = 0, draws = 0, losses = 0;
 };
 
