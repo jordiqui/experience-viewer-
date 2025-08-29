@@ -11,9 +11,28 @@ La aplicación puede compilarse tanto en Linux (modo consola) como en Windows
 con MinGW-w64 (modo gráfico).
 
 ### Linux
+La compilación por defecto genera una versión **de consola** que no muestra piezas ni el diálogo UCI.
+
 ```bash
 make
-# binario: build/experience-viewer
+# binario: build/experience-viewer (modo consola)
+./build/experience-viewer datos.exp
+```
+
+Para disponer de tablero y diálogo UCI en Linux es necesario compilar con Qt.
+Instalar dependencias (Debian/Ubuntu):
+
+```bash
+sudo apt-get update
+sudo apt-get install qtbase5-dev qt5-qmake pkg-config
+```
+
+Compilación y ejecución con Qt:
+
+```bash
+make USE_QT=1
+# binario: build/experience-viewer (Qt)
+./build/experience-viewer datos.exp
 
 # verificar (placeholder)
 make check
@@ -32,16 +51,9 @@ toolchain MinGW.
 
 ### Qt (experimental)
 
-Se incluye un prototipo basado en Qt que reemplaza el tablero y el diálogo de
-opciones UCI por widgets nativos. Requiere tener instalados Qt5 y
-`pkg-config`. Para activar la compilación de estos componentes:
-
-```bash
-make USE_QT=1
-```
-
-Esto compilará los fuentes ubicados en el directorio `qt/` utilizando las
-bibliotecas de Qt detectadas por `pkg-config`.
+Los componentes basados en Qt aún son experimentales. El comando `make USE_QT=1`
+compila los fuentes del directorio `qt/` utilizando las bibliotecas detectadas
+por `pkg-config`.
 
 ## Demo web con chess.js
 
