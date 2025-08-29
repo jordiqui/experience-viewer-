@@ -1,0 +1,7 @@
+#!/bin/sh
+# Simple configure script for Experience Viewer.
+# Currently, no configuration is required. This script
+# exists to satisfy build environments that expect a
+# configure step.
+
+exit 0
