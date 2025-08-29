@@ -30,6 +30,19 @@ make CXX=x86_64-w64-mingw32-g++
 Los flags específicos de Win32 se aplican automáticamente cuando se detecta un
 toolchain MinGW.
 
+### Qt (experimental)
+
+Se incluye un prototipo basado en Qt que reemplaza el tablero y el diálogo de
+opciones UCI por widgets nativos. Requiere tener instalados Qt5 y
+`pkg-config`. Para activar la compilación de estos componentes:
+
+```bash
+make USE_QT=1
+```
+
+Esto compilará los fuentes ubicados en el directorio `qt/` utilizando las
+bibliotecas de Qt detectadas por `pkg-config`.
+
 ## Demo web con chess.js
 
 Se agregó un ejemplo minimal en el directorio `web/` que utiliza las

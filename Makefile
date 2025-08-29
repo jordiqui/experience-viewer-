@@ -1,6 +1,15 @@
 CXX ?= g++
+USE_QT ?= 0
 BUILD_DIR := build
 SOURCES := $(wildcard *.cpp)
+
+ifeq ($(USE_QT),1)
+QT_SOURCES := $(wildcard qt/*.cpp)
+SOURCES += $(QT_SOURCES)
+CXXFLAGS += $(shell pkg-config --cflags Qt5Widgets)
+LIBS += $(shell pkg-config --libs Qt5Widgets)
+endif
+
 OBJECTS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 
 MINGW := $(findstring mingw,$(shell $(CXX) -dumpmachine 2>/dev/null))
