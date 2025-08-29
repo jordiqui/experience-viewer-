@@ -20,7 +20,7 @@ else
 TARGET := $(BUILD_DIR)/ExperienceViewer.exe
 endif
 
-CXXFLAGS += -std=c++20 -O2 -Wall -Wextra
+CXXFLAGS += -std=c++20 -O2 -Wall -Wextra -I.
 LDFLAGS  +=
 LIBS :=
 
@@ -39,6 +39,7 @@ $(BUILD_DIR):
 >mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: %.cpp | $(BUILD_DIR)
+>mkdir -p $(dir $@)
 >$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
