@@ -3,7 +3,11 @@
 #include <string>
 #include <vector>
 #include <functional>
+#ifdef _WIN32
 #include <windows.h>
+#else
+struct HWND__{int unused;}; using HWND = HWND__*;
+#endif
 
 struct UciOption{
     std::string name;

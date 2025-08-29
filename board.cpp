@@ -1,17 +1,6 @@
-
 #include "board.h"
 #include <algorithm>
 #include <string>
-#include <windows.h>
-
-// ---------- Global state for board control ----------
-static ULONG_PTR g_gdiplusToken = 0;
-static std::wstring g_assets_dir;
-static BoardState g_cur;
-static HWND g_board_hwnd = nullptr;
-static bool g_warned_img = false;
-
-// ---------- BoardState ----------
 
 void BoardState::set_startpos(){
     const char* start =
@@ -23,7 +12,6 @@ void BoardState::set_startpos(){
         "        "
         "PPPPPPPP"
         "RNBQKBNR";
-    // a1 = index 0 (bottom-left), we map so that r=0 is rank 1
     for(int r=0;r<8;++r){
         for(int f=0; f<8; ++f){
             squares[r*8+f] = start[(7-r)*8 + f];
@@ -72,7 +60,15 @@ void BoardState::apply_uci(const std::string& uci){
     white_to_move = !white_to_move;
 }
 
-// ---------- GDI+ helpers ----------
+#ifdef _WIN32
+#include <windows.h>
+#include <gdiplus.h>
+using namespace Gdiplus;
+
+static ULONG_PTR g_gdiplusToken = 0;
+static std::wstring g_assets_dir;
+static BoardState g_cur;
+static HWND g_board_hwnd = nullptr;
 
 static const wchar_t* BOARD_CLASS = L"EV_BoardWnd";
 
@@ -85,8 +81,6 @@ static const wchar_t* piece_name(wchar_t c){
     default:   return L"";
     }
 }
-
-// ---------- Public API ----------
 
 void board_register(HINSTANCE){
     if (!g_gdiplusToken){
@@ -108,7 +102,6 @@ void board_register(HINSTANCE){
             int offx = (W-size)/2, offy = (H-size)/2;
             int cell = size/8;
 
-            // Draw board
             SolidBrush light(Color(240,217,181));
             SolidBrush dark(Color(181,136,99));
             for(int rr=0; rr<8; ++rr){
@@ -119,28 +112,14 @@ void board_register(HINSTANCE){
                 }
             }
 
-            // Draw pieces
             for (int r = 0; r < 8; ++r) {
                 for (int f = 0; f < 8; ++f) {
                     char P = g_cur.squares[r * 8 + f];
                     if (P == ' ') continue;
-                    const wchar_t* fn = piece_name(P);
-                    std::wstring full = g_assets_dir + L"\\" + fn;
+                    std::wstring full = g_assets_dir + L"\\" + piece_name(P);
                     Image img(full.c_str());
                     Rect rect(offx + f * cell + 2, offy + (7 - r) * cell + 2, cell - 4, cell - 4);
-                    if (img.GetLastStatus() != Ok) {
-                        Pen pen(Color(200, 0, 0), 3.0f);
-                        g.DrawLine(&pen, rect.X, rect.Y, rect.GetRight(), rect.GetBottom());
-                        g.DrawLine(&pen, rect.GetRight(), rect.Y, rect.X, rect.GetBottom());
-                        if (!g_warned_img) {
-                            std::wstring msg = L"No se pudo cargar sprite: " + full +
-                                               L"\nAsegúrate de que assets/ contenga w_p.png...b_k.png";
-                            MessageBoxW(nullptr, msg.c_str(), L"Sprite faltante", MB_OK | MB_ICONWARNING);
-                            g_warned_img = true;
-                        }
-                    } else {
-                        g.DrawImage(&img, rect);
-                    }
+                    g.DrawImage(&img, rect);
                 }
             }
 
@@ -162,47 +141,18 @@ HWND board_create(HWND parent, int ctrl_id){
     return h;
 }
 
-void board_set_assets_dir(const std::wstring& dir){
-    g_assets_dir = dir;
-    // If not found, try parent (useful if running from build/)
-    std::wstring probe = g_assets_dir + L"\\w_p.png";
-    if (GetFileAttributesW(probe.c_str()) == INVALID_FILE_ATTRIBUTES){
-        size_t pos = g_assets_dir.find_last_of(L"\\/");
-        if (pos != std::wstring::npos){
-            std::wstring parent = g_assets_dir.substr(0, pos);
-            std::wstring alt = parent + L"\\assets";
-            std::wstring probe2 = alt + L"\\w_p.png";
-            if (GetFileAttributesW(probe2.c_str()) != INVALID_FILE_ATTRIBUTES){
-                g_assets_dir = alt;
-            }
-        }
-    }
-    // warn user if the basic pawn sprite still cannot be found after
-    // probing alternative locations.  The GUI is unusable without the
-    // piece images, so emit a message box once to alert the user.
-    std::wstring finalProbe = g_assets_dir + L"\\w_p.png";
-    if (GetFileAttributesW(finalProbe.c_str()) == INVALID_FILE_ATTRIBUTES && !g_warned_img) {
-        MessageBoxW(nullptr,
-                    L"No se encuentran los sprites en 'assets'. Asegúrate de que existan w_p.png … b_k.png.",
-                    L"Sprites no encontrados", MB_OK | MB_ICONWARNING);
-        g_warned_img = true;
-    }
-    if (g_board_hwnd) InvalidateRect(g_board_hwnd, nullptr, FALSE);
-}
+void board_set_assets_dir(const std::wstring& dir){ g_assets_dir = dir; }
+void board_set_position(const BoardState& st){ g_cur = st; InvalidateRect(g_board_hwnd,nullptr,TRUE); }
+void board_get_square_from_point(POINT, int& file, int& rank){ file = rank = -1; }
+std::string board_san_to_uci(const std::string&){ return std::string(); }
+void board_reset_start(){ g_cur.set_startpos(); board_set_position(g_cur); }
 
-void board_set_position(const BoardState& st){
-    g_cur = st;
-    if (g_board_hwnd) InvalidateRect(g_board_hwnd, nullptr, FALSE);
-}
-
-void board_get_square_from_point(POINT, int& file, int& rank){
-    file = rank = -1; // not used yet
-}
-
-std::string board_san_to_uci(const std::string&){
-    return std::string(); // minimal stub; GUI has a simple converter
-}
-
-void board_reset_start(){
-    BoardState st; st.set_startpos(); board_set_position(st);
-}
+#else
+void board_register(HINSTANCE) {}
+HWND board_create(HWND, int) { return nullptr; }
+void board_set_assets_dir(const std::wstring&) {}
+void board_set_position(const BoardState&) {}
+void board_get_square_from_point(POINT, int& file, int& rank){ file = rank = 0; }
+std::string board_san_to_uci(const std::string&){ return std::string(); }
+void board_reset_start(){}
+#endif

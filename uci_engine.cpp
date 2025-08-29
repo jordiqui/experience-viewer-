@@ -3,6 +3,8 @@
 #include <vector>
 #include <algorithm>
 
+#ifdef _WIN32
+
 UCIEngine::UCIEngine(){}
 UCIEngine::~UCIEngine(){ stop(); }
 
@@ -72,3 +74,15 @@ void UCIEngine::reader_loop(){
         }
     }
 }
+
+#else
+
+UCIEngine::UCIEngine(){}
+UCIEngine::~UCIEngine(){ }
+void UCIEngine::set_callback(Callback cb){ callback_ = std::move(cb); }
+bool UCIEngine::start(const std::wstring&){ return false; }
+void UCIEngine::stop(){}
+bool UCIEngine::send_line(const std::string&){ return false; }
+void UCIEngine::reader_loop(){ }
+
+#endif

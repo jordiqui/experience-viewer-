@@ -62,16 +62,23 @@ bool ExpDatabase::load(const std::wstring& path){
 
 bool ExpDatabase::save() const{
     if (!is_text_like || source_path.empty()) return false;
-    HANDLE h = CreateFileW(source_path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h==INVALID_HANDLE_VALUE) return false;
     std::string out = "# key,count,score,wins,draws,losses\n";
     for (auto& e: items){
         out += e.key + "," + std::to_string(e.count) + "," + std::to_string(e.score) + "," +
                std::to_string(e.wins) + "," + std::to_string(e.draws) + "," + std::to_string(e.losses) + "\n";
     }
+#ifdef _WIN32
+    HANDLE h = CreateFileW(source_path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h==INVALID_HANDLE_VALUE) return false;
     DWORD wrote=0; BOOL ok = WriteFile(h, out.data(), (DWORD)out.size(), &wrote, nullptr);
     CloseHandle(h);
     return ok == TRUE;
+#else
+    std::ofstream f(wide_to_utf8(source_path));
+    if(!f) return false;
+    f << out;
+    return true;
+#endif
 }
 
 ExpStats ExpDatabase::compute_stats() const{

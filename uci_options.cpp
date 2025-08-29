@@ -2,6 +2,7 @@
 #include "uci_options.h"
 #include "utils.h"
 #include <sstream>
+#ifdef _WIN32
 
 std::vector<UciOption> uci_parse_options(const std::string& log){
     std::vector<UciOption> v;
@@ -10,12 +11,9 @@ std::vector<UciOption> uci_parse_options(const std::string& log){
     while (std::getline(iss, line)){
         if (line.rfind("option name ", 0)==0){
             UciOption o;
-            // crude parse: option name <name> type <type> [min <n>] [max <n>] [default <val>] [var <v>]*
             std::istringstream ls(line);
-            std::string tok; ls >> tok; // option
-            ls >> tok; // name
+            std::string tok; ls >> tok; ls >> tok; // option name
             std::string name;
-            // collect name until "type"
             while (ls >> tok){
                 if (tok=="type") break;
                 if (!name.empty()) name.push_back(' ');
@@ -40,7 +38,6 @@ int show_uci_options_dialog(HWND parent,
                             const std::vector<UciOption>& opts,
                             const std::function<void(const std::string& line)>& send,
                             int& out_depth, int& out_movetime_ms){
-    // Minimal modal: only Depth/Movetime fields + send defaults for common options (Hash/Threads) if present
     const int W=420, H=180;
     HWND dlg = CreateWindowExW(WS_EX_DLGMODALFRAME, L"STATIC", L"UCI Options",
                                WS_POPUP|WS_CAPTION|WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, W, H,
@@ -83,7 +80,6 @@ int show_uci_options_dialog(HWND parent,
         GetWindowTextW(edM, b2, 64);
         out_depth = _wtoi(b1);
         out_movetime_ms = _wtoi(b2);
-        // send defaults for some common options if present
         for (auto& o: opts){
             if (o.type=="check"){
                 std::string v = o.def.empty()? "false" : o.def;
@@ -103,3 +99,14 @@ int show_uci_options_dialog(HWND parent,
     DestroyWindow(dlg);
     return ret;
 }
+
+#else
+
+std::vector<UciOption> uci_parse_options(const std::string&){ return {}; }
+int show_uci_options_dialog(HWND, const std::vector<UciOption>&,
+                            const std::function<void(const std::string& line)>&,
+                            int& out_depth, int& out_movetime_ms){
+    (void)out_depth; (void)out_movetime_ms; return 0;
+}
+
+#endif
