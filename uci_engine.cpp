@@ -27,7 +27,11 @@ bool UCIEngine::start(const std::wstring& path){
     PROCESS_INFORMATION pi{};
 
     std::wstring cmd = L"\"" + path + L"\"";
-    if (!CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, TRUE, CREATE_NEW_PROCESS_GROUP, nullptr, nullptr, &si, &pi)){
+    DWORD flags = CREATE_NEW_PROCESS_GROUP;
+#ifdef _WIN32
+    flags |= CREATE_NO_WINDOW; // avoid spawning a console window
+#endif
+    if (!CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr, &si, &pi)){
         CloseHandle(outRd); CloseHandle(outWr); CloseHandle(inRd); CloseHandle(inWr);
         return false;
     }

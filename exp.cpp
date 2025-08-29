@@ -12,7 +12,7 @@ static void split_line(const std::string& line, std::vector<std::string>& out){
     out.clear();
     std::string cur;
     for(char c: line){
-        if (c==',' || c==';' || isspace((unsigned char)c)){
+        if (c==',' || c==';' || c==':' || isspace((unsigned char)c)){
             if (!cur.empty()) { out.push_back(cur); cur.clear(); }
         } else cur.push_back(c);
     }
@@ -32,13 +32,18 @@ bool ExpDatabase::load(const std::wstring& path){
             if (line.empty() || line[0]=='#') continue;
             std::vector<std::string> v; split_line(line, v);
             if (v.empty()) continue;
-            ExpEntry e;
-            e.key = v[0];
-            if (v.size()>1) e.count = std::stoi(v[1]);
-            if (v.size()>2) e.score = std::stod(v[2]);
-            if (v.size()>3) e.wins  = std::stoi(v[3]);
-            if (v.size()>4) e.draws = std::stoi(v[4]);
-            if (v.size()>5) e.losses= std::stoi(v[5]);
+            ExpEntry e; e.key = v[0];
+            for (size_t i=1; i<v.size(); ++i){
+                const std::string& tok = v[i];
+                if (tok=="count" && i+1<v.size()) { e.count = std::stoi(v[++i]); }
+                else if (tok=="eval" && i+2<v.size() && v[i+1]=="cp") { e.score = std::stod(v[i+2]); i+=2; }
+                else if (tok=="quality" && i+1<v.size()) { e.quality = std::stoi(v[++i]); }
+                else if (i==1) { e.count = std::stoi(tok); }
+                else if (i==2) { e.score = std::stod(tok); }
+                else if (i==3) { e.wins  = std::stoi(tok); }
+                else if (i==4) { e.draws = std::stoi(tok); }
+                else if (i==5) { e.losses= std::stoi(tok); }
+            }
             items.push_back(std::move(e));
         }
         is_text_like = true;
@@ -62,10 +67,11 @@ bool ExpDatabase::load(const std::wstring& path){
 
 bool ExpDatabase::save() const{
     if (!is_text_like || source_path.empty()) return false;
-    std::string out = "# key,count,score,wins,draws,losses\n";
+    std::string out = "# key,count,score,quality,wins,draws,losses\n";
     for (auto& e: items){
         out += e.key + "," + std::to_string(e.count) + "," + std::to_string(e.score) + "," +
-               std::to_string(e.wins) + "," + std::to_string(e.draws) + "," + std::to_string(e.losses) + "\n";
+               std::to_string(e.quality) + "," + std::to_string(e.wins) + "," +
+               std::to_string(e.draws) + "," + std::to_string(e.losses) + "\n";
     }
 #ifdef _WIN32
     HANDLE h = CreateFileW(source_path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

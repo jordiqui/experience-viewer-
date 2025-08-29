@@ -46,6 +46,13 @@ int show_uci_options_dialog(HWND parent,
                                WS_POPUP|WS_CAPTION|WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, W, H,
                                parent, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (!dlg) return 0;
+    // center relative to parent so the OK button is visible
+    if (parent) {
+        RECT pr; GetWindowRect(parent, &pr);
+        int cx = pr.left + ((pr.right - pr.left) - W) / 2;
+        int cy = pr.top  + ((pr.bottom - pr.top) - H) / 2;
+        SetWindowPos(dlg, nullptr, cx, cy, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+    }
     int y=12;
 
     CreateWindowW(L"STATIC", L"Analysis depth (0=ignore):", WS_CHILD|WS_VISIBLE, x, y+4, lbl, row, dlg, nullptr, GetModuleHandleW(nullptr), nullptr);
