@@ -35,8 +35,7 @@ $(BUILD_DIR)/%.o: %.cpp | $(BUILD_DIR)
 $(TARGET): $(OBJECTS)
 >$(CXX) $(OBJECTS) $(LDFLAGS) -o $@ $(LIBS)
 >@echo Copy assets...
->@mkdir -p $(BUILD_DIR)/assets
->@cp -f assets/*.png $(BUILD_DIR)/assets/ || true
+>@cp -r assets $(BUILD_DIR)/
 >@echo copy assets done # copy assets
 
 clean:
