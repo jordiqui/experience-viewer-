@@ -6,6 +6,7 @@ SOURCES := $(wildcard *.cpp)
 ifeq ($(USE_QT),1)
 QT_SOURCES := $(wildcard qt/*.cpp)
 SOURCES += $(QT_SOURCES)
+CXXFLAGS += -DUSE_QT
 CXXFLAGS += $(shell pkg-config --cflags Qt5Widgets)
 LIBS += $(shell pkg-config --libs Qt5Widgets)
 endif

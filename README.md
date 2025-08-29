@@ -3,6 +3,7 @@
 - **Tablero** con sprites PNG (GDI+), clic para mover, navegación ←/→ (solo Windows).
 - **Layout horizontal**: PGN a la izquierda; derecha = tablero + tabla de jugadas.
 - **UCI Options (Arena/Scid-like)**: diálogo dinámico a partir de `option name ...` del motor.
+  El parsing de estas opciones está disponible en cualquier plataforma.
 - **.exp**: lectura tipo texto (CSV-like) y cruce básico por clave UCI.
 - **Detección de sprites**: la aplicación avisa si faltan imágenes de piezas en `assets/`.
 
@@ -41,7 +42,9 @@ make USE_QT=1
 ```
 
 Esto compilará los fuentes ubicados en el directorio `qt/` utilizando las
-bibliotecas de Qt detectadas por `pkg-config`.
+bibliotecas de Qt detectadas por `pkg-config` y define la macro `USE_QT`.
+Al ejecutar esta variante, la opción **Configure Options…** abrirá un
+diálogo Qt para modificar los parámetros del motor.
 
 ## Demo web con chess.js
 

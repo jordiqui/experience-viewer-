@@ -2,9 +2,9 @@
 #include "uci_options.h"
 #include "utils.h"
 #include <sstream>
-#ifdef _WIN32
-#include <commctrl.h>
 
+// Parse the engine log looking for "option name" lines. This logic is
+// platform independent and now available on all builds.
 std::vector<UciOption> uci_parse_options(const std::string& log){
     std::vector<UciOption> v;
     std::istringstream iss(log);
@@ -34,6 +34,9 @@ std::vector<UciOption> uci_parse_options(const std::string& log){
     }
     return v;
 }
+
+#ifdef _WIN32
+#include <commctrl.h>
 
 int show_uci_options_dialog(HWND parent,
                             const std::vector<UciOption>& opts,
@@ -147,7 +150,6 @@ int show_uci_options_dialog(HWND parent,
 
 #else
 
-std::vector<UciOption> uci_parse_options(const std::string&){ return {}; }
 int show_uci_options_dialog(HWND, const std::vector<UciOption>&,
                             const std::function<void(const std::string& line)>&,
                             int& out_depth, int& out_movetime_ms){

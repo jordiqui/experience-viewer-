@@ -4,6 +4,9 @@
 #include "utils.h"
 #include "board.h"
 #include "uci_options.h"
+#if defined(USE_QT)
+#include "qt/uci_options_qt.h"
+#endif
 #include "app.h"
 #include <commctrl.h>
 #include <windowsx.h>
@@ -374,7 +377,13 @@ static void on_configure_engine(HWND hWnd){
     Sleep(250);
     auto opts = uci_parse_options(g_app.engine_log);
     int depth=g_app.analysis_depth, mt=g_app.analysis_movetime;
-    int ok = show_uci_options_dialog(hWnd, opts, [](const std::string& line){ g_app.engine.send_line(line); }, depth, mt);
+#if defined(USE_QT)
+    int ok = show_uci_options_dialog_qt(nullptr, opts,
+        [](const std::string& line){ g_app.engine.send_line(line); }, depth, mt);
+#else
+    int ok = show_uci_options_dialog(hWnd, opts,
+        [](const std::string& line){ g_app.engine.send_line(line); }, depth, mt);
+#endif
     if (ok){
         g_app.analysis_depth = depth;
         g_app.analysis_movetime = mt;
