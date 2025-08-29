@@ -14,6 +14,9 @@ con MinGW-w64 (modo gráfico).
 ```bash
 make
 # binario: build/experience-viewer
+
+# verificar (placeholder)
+make check
 ```
 
 ### Windows (cross-compile)

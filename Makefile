@@ -42,3 +42,7 @@ $(TARGET): $(OBJECTS)
 clean:
 >rm -rf $(BUILD_DIR)
 
+.PHONY: check
+check: $(TARGET)
+>@echo "nothing to check (yet)"
+
