@@ -42,7 +42,13 @@ $(TARGET): $(OBJECTS)
 clean:
 >rm -rf $(BUILD_DIR)
 
-.PHONY: check
+.PHONY: check dist distcheck
 check: $(TARGET)
 >@echo "nothing to check (yet)"
+
+dist: check
+>@echo "nothing to dist (yet)"
+
+distcheck: dist
+>@echo "nothing to distcheck (yet)"
 

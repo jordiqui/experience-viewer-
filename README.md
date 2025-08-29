@@ -17,6 +17,9 @@ make
 
 # verificar (placeholder)
 make check
+
+# verificar distribución (placeholder)
+make distcheck
 ```
 
 ### Windows (cross-compile)
