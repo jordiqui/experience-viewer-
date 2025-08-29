@@ -10,6 +10,8 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <map>
+#include <cctype>
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -242,6 +244,93 @@ static void on_open_pgn(){
     set_status(L"PGN loaded: " + std::to_wstring(g_app.pgn_db.games.size()) + L" games.");
 }
 
+static std::vector<std::string> split_moves(const std::string& s){
+    std::vector<std::string> out;
+    std::string cur;
+    for(char c : s){
+        if (isspace((unsigned char)c)){
+            if(!cur.empty()){ out.push_back(cur); cur.clear(); }
+        } else cur.push_back(c);
+    }
+    if(!cur.empty()) out.push_back(cur);
+    return out;
+}
+
+static void populate_exp_tree(HWND hTree){
+    TreeView_DeleteAllItems(hTree);
+    TVINSERTSTRUCTW rootIns{};
+    rootIns.hParent = TVI_ROOT;
+    rootIns.hInsertAfter = TVI_LAST;
+    rootIns.item.mask = TVIF_TEXT;
+    rootIns.item.pszText = const_cast<LPWSTR>(L"Start");
+    HTREEITEM root = TreeView_InsertItem(hTree, &rootIns);
+
+    std::map<std::wstring, HTREEITEM> nodes;
+    nodes[L""] = root;
+
+    for(const auto& e : g_app.exp_db.items){
+        auto moves = split_moves(e.key);
+        if(moves.empty()) continue;
+        std::wstring prefix;
+        for(size_t i=0;i<moves.size();++i){
+            if(i>0) prefix += L' ';
+            prefix += utf8_to_wide(moves[i]);
+            if(!nodes.count(prefix)){
+                std::wstring parentPrefix = prefix.substr(0, prefix.find_last_of(L' '));
+                HTREEITEM parent = nodes[parentPrefix];
+                std::wstring text = utf8_to_wide(moves[i]);
+                TVINSERTSTRUCTW ins{};
+                ins.hParent = parent;
+                ins.hInsertAfter = TVI_LAST;
+                ins.item.mask = TVIF_TEXT;
+                ins.item.pszText = const_cast<LPWSTR>(text.c_str());
+                HTREEITEM hItem = TreeView_InsertItem(hTree, &ins);
+                nodes[prefix] = hItem;
+            }
+        }
+        HTREEITEM hItem = nodes[prefix];
+        std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
+        ws << utf8_to_wide(moves.back()) << L" (" << e.count << L", " << e.score << L")";
+        std::wstring text = ws.str();
+        TVITEMW tvi{}; tvi.mask = TVIF_TEXT; tvi.hItem = hItem; tvi.pszText = const_cast<LPWSTR>(text.c_str());
+        TreeView_SetItem(hTree, &tvi);
+    }
+    TreeView_Expand(hTree, root, TVE_EXPAND);
+}
+
+static LRESULT CALLBACK ExpTreeWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam){
+    static HWND hTree = nullptr;
+    switch(msg){
+        case WM_CREATE:
+            hTree = CreateWindowExW(0, WC_TREEVIEWW, L"", WS_CHILD|WS_VISIBLE|TVS_HASLINES|TVS_LINESATROOT|TVS_HASBUTTONS,
+                                   0,0,0,0, hWnd, (HMENU)1, GetModuleHandleW(nullptr), nullptr);
+            populate_exp_tree(hTree);
+            break;
+        case WM_SIZE:
+            MoveWindow(hTree, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+            break;
+        default:
+            return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+static void show_exp_tree_window(){
+    WNDCLASSW wc{};
+    wc.lpszClassName = L"ExpTreeWndClass";
+    wc.lpfnWndProc = ExpTreeWndProc;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hInstance = GetModuleHandleW(nullptr);
+    static bool registered = false;
+    if(!registered){
+        RegisterClassW(&wc);
+        registered = true;
+    }
+    CreateWindowExW(0, wc.lpszClassName, L"EXP Opening Tree", WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                    CW_USEDEFAULT, CW_USEDEFAULT, 400, 600,
+                    nullptr, nullptr, wc.hInstance, nullptr);
+}
+
 static void on_open_exp(){
     auto path = open_file_dialog(L"EXP Files\0*.exp\0All Files\0*.*\0\0", L"Open Experience File");
     if (path.empty()) return;
@@ -251,6 +340,7 @@ static void on_open_exp(){
     std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
     ws << L"EXP loaded: " << st.entries << L" entries, avg score " << st.avg_score;
     set_status(ws.str());
+    show_exp_tree_window();
 }
 
 static void on_load_engine(){
