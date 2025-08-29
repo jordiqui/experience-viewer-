@@ -21,6 +21,7 @@ TARGET := $(BUILD_DIR)/ExperienceViewer.exe
 endif
 
 CXXFLAGS += -std=c++20 -O2 -Wall -Wextra -I.
+CXXFLAGS += -DUSE_QT=$(USE_QT)
 LDFLAGS  +=
 LIBS :=
 
