@@ -39,6 +39,7 @@ $(BUILD_DIR):
 >mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/%.o: %.cpp | $(BUILD_DIR)
+>@mkdir -p $(@D)
 >$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJECTS)
