@@ -20,7 +20,7 @@ else
 TARGET := $(BUILD_DIR)/ExperienceViewer.exe
 endif
 
-CXXFLAGS += -std=c++20 -O2 -Wall -Wextra
+CXXFLAGS += -std=c++20 -O2 -Wall -Wextra -I.
 LDFLAGS  +=
 LIBS :=
 
