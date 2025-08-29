@@ -522,6 +522,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
+int run_gui(HINSTANCE hInstance) {
     WNDCLASSEXW wc{};
     wc.cbSize = sizeof(wc);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
