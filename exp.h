@@ -2,7 +2,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <windows.h>
 
 struct ExpEntry {
     std::string key;  // typically UCI like e2e4

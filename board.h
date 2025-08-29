@@ -1,9 +1,16 @@
 
 #pragma once
+#include <string>
+
+#ifdef _WIN32
 #include <windows.h>
 #include <gdiplus.h>
-#include <string>
 using namespace Gdiplus;
+#else
+struct HWND__ { int unused; }; using HWND = HWND__*;
+struct HINSTANCE__ { int unused; }; using HINSTANCE = HINSTANCE__*;
+struct POINT { long x; long y; };
+#endif
 
 struct BoardState{
     // 8x8 board, indices 0..63 (a1=0, h1=7, a8=56)

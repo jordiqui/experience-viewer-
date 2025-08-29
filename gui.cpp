@@ -1,5 +1,6 @@
 
 #include "gui.h"
+#ifdef _WIN32
 #include "utils.h"
 #include "board.h"
 #include "uci_options.h"
@@ -34,7 +35,6 @@ enum {
     IDM_ANALYSE_CURRENT,
     IDM_ANALYSE_GAME
 };
-
 static AppState g_app;
 static HWND g_hList = nullptr;   // PGN list
 static HWND g_hMoves = nullptr;  // Moves list (right bottom)
@@ -516,7 +516,6 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
-int run_gui(HINSTANCE hInstance){
     WNDCLASSEXW wc{};
     wc.cbSize = sizeof(wc);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
@@ -540,3 +539,4 @@ int run_gui(HINSTANCE hInstance){
     }
     return (int)msg.wParam;
 }
+#endif
