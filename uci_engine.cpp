@@ -2,6 +2,19 @@
 #include "uci_engine.h"
 #include <vector>
 #include <algorithm>
+#ifndef _WIN32
+#include <filesystem>
+#ifdef QT_CORE_LIB
+#include <QString>
+#include <QObject>
+#include <QByteArray>
+#else
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <errno.h>
+#endif
+#endif
 
 #ifdef _WIN32
 
@@ -82,11 +95,120 @@ void UCIEngine::reader_loop(){
 #else
 
 UCIEngine::UCIEngine(){}
-UCIEngine::~UCIEngine(){ }
+UCIEngine::~UCIEngine(){ stop(); }
+
 void UCIEngine::set_callback(Callback cb){ callback_ = std::move(cb); }
-bool UCIEngine::start(const std::wstring&){ return false; }
-void UCIEngine::stop(){}
-bool UCIEngine::send_line(const std::string&){ return false; }
+
+#ifdef QT_CORE_LIB
+
+bool UCIEngine::start(const std::wstring& path){
+    stop();
+    process_ = new QProcess();
+    QObject::connect(process_, &QProcess::readyReadStandardOutput, [this](){
+        if (callback_) {
+            callback_(process_->readAllStandardOutput().toStdString());
+        }
+    });
+    QObject::connect(process_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this](int, QProcess::ExitStatus){
+        running_.store(false);
+    });
+    process_->start(QString::fromStdWString(path));
+    running_.store(process_->waitForStarted());
+    return running_.load();
+}
+
+void UCIEngine::stop(){
+    if (!running_.load()) return;
+    running_.store(false);
+    if (process_){
+        process_->kill();
+        process_->waitForFinished();
+        delete process_;
+        process_ = nullptr;
+    }
+    if (reader_.joinable()) reader_.join();
+}
+
+bool UCIEngine::send_line(const std::string& s){
+    if (!running_.load() || !process_) return false;
+    QByteArray line = QByteArray::fromStdString(s + "\n");
+    return process_->write(line) == line.size();
+}
+
 void UCIEngine::reader_loop(){ }
+
+#else
+
+bool UCIEngine::start(const std::wstring& path){
+    stop();
+    int inPipe[2];
+    int outPipe[2];
+    if (pipe(inPipe) < 0) return false;
+    if (pipe(outPipe) < 0){ close(inPipe[0]); close(inPipe[1]); return false; }
+
+    pid_t pid = fork();
+    if (pid == 0){
+        // child
+        dup2(inPipe[0], STDIN_FILENO);
+        dup2(outPipe[1], STDOUT_FILENO);
+        dup2(outPipe[1], STDERR_FILENO);
+        close(inPipe[0]); close(inPipe[1]);
+        close(outPipe[0]); close(outPipe[1]);
+        std::string exe = std::filesystem::path(path).string();
+        execl(exe.c_str(), exe.c_str(), (char*)nullptr);
+        _exit(1);
+    }
+    if (pid < 0){
+        close(inPipe[0]); close(inPipe[1]);
+        close(outPipe[0]); close(outPipe[1]);
+        return false;
+    }
+
+    // parent
+    close(inPipe[0]);
+    close(outPipe[1]);
+    fdInWr_ = inPipe[1];
+    fdOutRd_ = outPipe[0];
+    pid_ = pid;
+    running_.store(true);
+    reader_ = std::thread(&UCIEngine::reader_loop, this);
+    return true;
+}
+
+void UCIEngine::stop(){
+    if (!running_.load()) return;
+    running_.store(false);
+    if (fdInWr_ != -1){ close(fdInWr_); fdInWr_ = -1; }
+    if (fdOutRd_ != -1){ close(fdOutRd_); fdOutRd_ = -1; }
+    if (pid_ > 0){
+        kill(pid_, SIGTERM);
+        waitpid(pid_, nullptr, 0);
+        pid_ = -1;
+    }
+    if (reader_.joinable()) reader_.join();
+}
+
+bool UCIEngine::send_line(const std::string& s){
+    if (!running_.load() || fdInWr_ == -1) return false;
+    std::string line = s; line.push_back('\n');
+    return write(fdInWr_, line.data(), line.size()) == (ssize_t)line.size();
+}
+
+void UCIEngine::reader_loop(){
+    char buf[4096];
+    while (running_.load()){
+        ssize_t rd = read(fdOutRd_, buf, sizeof(buf));
+        if (rd > 0){
+            if (callback_) callback_(std::string(buf, rd));
+        } else if (rd == 0){
+            break; // EOF
+        } else {
+            if (errno == EINTR) continue;
+            break;
+        }
+    }
+}
+
+#endif
 
 #endif
