@@ -259,6 +259,16 @@ static std::vector<std::string> split_moves(const std::string& s){
     return out;
 }
 
+static std::string uci_to_simple(const std::string& uci){
+    if (uci.size() < 4) return uci;
+    std::string dst = uci.substr(2,2);
+    if (uci.size() >= 5) {
+        dst.push_back('=');
+        dst.push_back(uci[4]);
+    }
+    return dst;
+}
+
 static void populate_exp_tree(HWND hTree){
     TreeView_DeleteAllItems(hTree);
     TVINSERTSTRUCTW rootIns{};
@@ -277,11 +287,12 @@ static void populate_exp_tree(HWND hTree){
         std::wstring prefix;
         for(size_t i=0;i<moves.size();++i){
             if(i>0) prefix += L' ';
-            prefix += utf8_to_wide(moves[i]);
+            std::string simp = uci_to_simple(moves[i]);
+            prefix += utf8_to_wide(simp);
             if(!nodes.count(prefix)){
                 std::wstring parentPrefix = prefix.substr(0, prefix.find_last_of(L' '));
                 HTREEITEM parent = nodes[parentPrefix];
-                std::wstring text = utf8_to_wide(moves[i]);
+                std::wstring text = utf8_to_wide(simp);
                 TVINSERTSTRUCTW ins{};
                 ins.hParent = parent;
                 ins.hInsertAfter = TVI_LAST;
@@ -293,7 +304,7 @@ static void populate_exp_tree(HWND hTree){
         }
         HTREEITEM hItem = nodes[prefix];
         std::wstringstream ws; ws.setf(std::ios::fixed); ws.precision(2);
-        ws << utf8_to_wide(moves.back()) << L" (" << e.count << L", " << e.score << L")";
+        ws << utf8_to_wide(uci_to_simple(moves.back())) << L" (" << e.count << L", " << e.score << L")";
         std::wstring text = ws.str();
         TVITEMW tvi{}; tvi.mask = TVIF_TEXT; tvi.hItem = hItem; tvi.pszText = const_cast<LPWSTR>(text.c_str());
         TreeView_SetItem(hTree, &tvi);
@@ -465,12 +476,18 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
             // assets dir
             wchar_t mod[MAX_PATH]; GetModuleFileNameW(nullptr, mod, MAX_PATH);
             std::wstring dir(mod); auto pos = dir.find_last_of(L"\\/"); if (pos!=std::wstring::npos) dir.erase(pos);
-            board_set_assets_dir(dir + L"\\assets");
-            // Verify assets exist
-            std::wstring probe = dir + L"\\assets\\w_p.png"; // Verify assets exist
+            std::wstring assets = dir + L"\\assets";
+            std::wstring probe = assets + L"\\w_p.png";
             if (GetFileAttributesW(probe.c_str()) == INVALID_FILE_ATTRIBUTES) {
-                show_message(L"No se encuentran los sprites en 'assets'. Asegúrate de que existan w_p.png ... b_k.png.", L"Sprites no encontrados", MB_OK|MB_ICONWARNING);
+                std::wstring alt = dir + L"\\..\\assets";
+                std::wstring altProbe = alt + L"\\w_p.png";
+                if (GetFileAttributesW(altProbe.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                    assets = alt;
+                } else {
+                    show_message(L"No se encuentran los sprites en 'assets'. Asegúrate de que existan w_p.png ... b_k.png.", L"Sprites no encontrados", MB_OK|MB_ICONWARNING);
+                }
             }
+            board_set_assets_dir(assets);
             // initial board
             g_app.board.set_startpos();
             board_set_position(g_app.board.st);
