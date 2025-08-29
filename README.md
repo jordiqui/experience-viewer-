@@ -33,18 +33,19 @@ toolchain MinGW.
 
 ### Qt (experimental)
 
-Se incluye un prototipo basado en Qt que reemplaza el tablero y el diálogo de
-opciones UCI por widgets nativos. Requiere tener instalados Qt5 y
-`pkg-config`. Para activar la compilación de estos componentes:
+Los componentes basados en Qt aún son experimentales. Se incluye un prototipo
+que reemplaza el tablero y el diálogo de opciones UCI por widgets nativos.
+Requiere tener instalados Qt5 y `pkg-config`. Para activar la compilación de
+estos componentes:
 
 ```bash
 make USE_QT=1
 ```
 
-Esto compilará los fuentes ubicados en el directorio `qt/` utilizando las
-bibliotecas de Qt detectadas por `pkg-config` y define la macro `USE_QT`.
-Al ejecutar esta variante, la opción **Configure Options…** abrirá un
-diálogo Qt para modificar los parámetros del motor.
+El comando compila los fuentes ubicados en el directorio `qt/` utilizando las
+bibliotecas de Qt detectadas por `pkg-config` y define la macro `USE_QT`. Al
+ejecutar esta variante, la opción **Configure Options…** abrirá un diálogo Qt
+para modificar los parámetros del motor.
 
 ## Demo web con chess.js
 
