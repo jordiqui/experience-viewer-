@@ -2,7 +2,7 @@
 #pragma once
 #include <string>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(USE_QT)
 #include <windows.h>
 #include <gdiplus.h>
 using namespace Gdiplus;

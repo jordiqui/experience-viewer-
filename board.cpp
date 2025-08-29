@@ -60,7 +60,7 @@ void BoardState::apply_uci(const std::string& uci){
     white_to_move = !white_to_move;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(USE_QT)
 #include <windows.h>
 #include <gdiplus.h>
 using namespace Gdiplus;
@@ -146,6 +146,60 @@ void board_set_position(const BoardState& st){ g_cur = st; InvalidateRect(g_boar
 void board_get_square_from_point(POINT, int& file, int& rank){ file = rank = -1; }
 std::string board_san_to_uci(const std::string&){ return std::string(); }
 void board_reset_start(){ g_cur.set_startpos(); board_set_position(g_cur); }
+
+#elif USE_QT
+#include <QString>
+#include "qt/qt_board.h"
+
+static QtBoard* g_board = nullptr;
+static BoardState g_cur;
+static std::wstring g_assets_dir;
+
+void board_register(HINSTANCE){}
+
+HWND board_create(HWND parent, int ctrl_id){
+    Q_UNUSED(ctrl_id);
+    QWidget* p = reinterpret_cast<QWidget*>(parent);
+    g_board = new QtBoard(p);
+    if(!g_assets_dir.empty())
+        g_board->setAssetsDir(QString::fromStdWString(g_assets_dir));
+    g_board->setPosition(g_cur);
+    g_board->show();
+    return reinterpret_cast<HWND>(g_board);
+}
+
+void board_set_assets_dir(const std::wstring& dir){
+    g_assets_dir = dir;
+    if(g_board)
+        g_board->setAssetsDir(QString::fromStdWString(dir));
+}
+
+void board_set_position(const BoardState& st){
+    g_cur = st;
+    if(g_board)
+        g_board->setPosition(st);
+}
+
+void board_get_square_from_point(POINT pt, int& file, int& rank){
+    if(!g_board){ file = rank = -1; return; }
+    int w = g_board->width();
+    int h = g_board->height();
+    int size = std::min(w,h);
+    int offx = (w - size)/2;
+    int offy = (h - size)/2;
+    if(pt.x < offx || pt.x >= offx + size || pt.y < offy || pt.y >= offy + size){
+        file = rank = -1; return;
+    }
+    file = (pt.x - offx) * 8 / size;
+    rank = 7 - (pt.y - offy) * 8 / size;
+}
+
+std::string board_san_to_uci(const std::string&){ return std::string(); }
+
+void board_reset_start(){
+    g_cur.set_startpos();
+    board_set_position(g_cur);
+}
 
 #else
 void board_register(HINSTANCE) {}
