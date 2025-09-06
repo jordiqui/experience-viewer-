@@ -51,9 +51,11 @@ toolchain MinGW.
 
 ### Qt (experimental)
 
-Los componentes basados en Qt aún son experimentales. El comando `make USE_QT=1`
-compila los fuentes del directorio `qt/` utilizando las bibliotecas detectadas
-por `pkg-config`.
+Los componentes basados en Qt aún son experimentales. El comando
+`make USE_QT=1` compila los fuentes del directorio `qt/` utilizando las
+bibliotecas detectadas por `pkg-config` e inicia una interfaz gráfica simple
+inspirada en [jfxchess](https://github.com/asdfjkl/jfxchess) que muestra un
+tablero y una lista de jugadas.
 
 ## Demo web con chess.js
 

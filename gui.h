@@ -4,6 +4,10 @@
 #include <windows.h>
 int run_gui(HINSTANCE hInstance, const wchar_t* assets_dir = nullptr);
 #else
+// When building with the Qt frontend we provide a real implementation of
+// run_gui() in qt/gui_qt.cpp. Keeping the declaration here allows the rest of
+// the codebase to invoke the GUI in a cross platform manner while still
+// falling back to a no-op when Qt support is disabled.
 typedef void* HINSTANCE;
-inline int run_gui(HINSTANCE, const wchar_t* = nullptr) { return 0; }
+int run_gui(HINSTANCE hInstance = nullptr, const wchar_t* assets_dir = nullptr);
 #endif
