@@ -12,9 +12,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 #else
 #include "exp.h"
 #include "utils.h"
+#include "gui.h"
 #include <iostream>
 
 int main(int argc, char** argv){
+#if USE_QT
+    (void)argc; (void)argv;
+    return run_gui(nullptr);
+#else
     if (argc < 2){
         std::cerr << "Usage: " << argv[0] << " <file.exp>\n";
         return 1;
@@ -28,5 +33,6 @@ int main(int argc, char** argv){
         std::cout << e.key << " (" << e.count << ")\n";
     }
     return 0;
+#endif
 }
 #endif
